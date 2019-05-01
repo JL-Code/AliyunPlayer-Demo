@@ -1,5 +1,5 @@
 <template>
-  <div ref="J_AliyunPlayer_Element" id="J_AliyunPlayer_Element">视频播放器</div>
+  <div :id="domid"></div>
 </template>
 
 <script>
@@ -40,12 +40,15 @@ export default {
     autoplay: {
       type: Boolean,
       default: false
-    }
+    },
+    skinLayout: [Boolean, Array]
   },
   data() {
     return {
+      domid: "J_AliyunPlayer_Element_",
       initialized: false,
       playing: false,
+      isAudio: undefined,
       $player: null
     };
   },
@@ -65,11 +68,15 @@ export default {
   },
   created() {
     console.log("created");
+    this.initDom();
     this.$nextTick(() => {
       this.initPlayer();
     });
   },
   methods: {
+    initDom() {
+      this.domid = `J_AliyunPlayer_Element_${Date.now()}`;
+    },
     initPlayer() {
       console.log("start initPlayer");
       var vm = this;
@@ -79,22 +86,30 @@ export default {
       }
       var defaults = {
         // player 容器ID
-        id: "J_AliyunPlayer_Element",
+        id: vm.domid,
         // 播放器宽度
         width: "100%",
         // 播放器是否自动播放，在移动端autoplay属性会失效。
-        autoplay: false
+        autoplay: false,
+        controlBarVisibility: "always"
       };
       var opts = Object.assign({}, defaults, {
         source: vm.source,
         width: vm.width,
         height: vm.height,
+        preload: true,
         autoplay: vm.autoplay
       });
+      // if (vm.skinLayout) {
+      //   opts.skinLayout = vm.skinLayout;
+      // }
       // 创建一个player实例
+      console.log("Aliplayer opts: ", opts);
       new Aliplayer(opts, function(player) {
         vm.$player = player;
         console.log("player", player);
+        console.log("player _isAudio", player._isAudio);
+        vm.isAudio = player._isAudio;
         console.log("播放器初始完成");
         vm.initialized = true;
         vm.$emit("initialized");
@@ -139,11 +154,32 @@ export default {
      */
     replay() {
       this.$player.replay();
+    },
+    // 获取当前的播放时刻，返回的单位为秒。
+    getCurrentTime() {
+      this.$player.getCurrentTime();
+    },
+    // 跳转到某个时刻进行播放，time的单位为秒。
+    seek(time) {
+      this.$player.seek(time);
+    },
+    // 获取播放器状态，包含的值：
+    // ‘init’
+    // ‘ready’
+    // ‘loading’
+    // ‘play’
+    // ‘pause’
+    // ‘playing’
+    // ‘waiting’
+    // ‘error’
+    // ‘ended’
+    getStatus() {
+      return this.$player.getStatus();
     }
   },
   beforeDestroy() {
-    // 移除事件监听
-    // 移除额外创建的dom元素
+    // 销毁player
+    this.$player.dispose();
     this.$player = null;
   }
 };

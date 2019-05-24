@@ -20,6 +20,8 @@ export default {
      * ```
      * 3. 仅MPS用户使用
      */
+    // 视频封面
+    cover: String,
     playmode: {
       type: String,
       default: "default"
@@ -36,12 +38,14 @@ export default {
       type: String,
       default: "300px"
     },
-    // 播放器是否自动播放，在移动端autoplay属性会失效。
+    /**
+     * 播放器是否自动播放，在移动端autoplay属性会失效。Safari11不会自动开启自动播放
+     */
     autoplay: {
       type: Boolean,
       default: false
-    },
-    skinLayout: [Boolean, Array]
+    }
+    // skinLayout: [Boolean, Array]
   },
   data() {
     return {
@@ -79,30 +83,96 @@ export default {
     },
     initPlayer() {
       console.log("start initPlayer");
-      var vm = this;
+      const vm = this;
       if (typeof Aliplayer === "undefined") {
         console.warn("missing Aliplayer");
         return;
       }
-      var defaults = {
+      let defaults = {
         // player 容器ID
         id: vm.domid,
         // 播放器宽度
         width: "100%",
         // 播放器是否自动播放，在移动端autoplay属性会失效。
         autoplay: false,
-        controlBarVisibility: "always"
+        preload: false,
+        controlBarVisibility: "always",
+        skinLayout: [
+          {
+            name: "bigPlayButton",
+            align: "blabs",
+            x: 30,
+            y: 80
+          },
+          {
+            name: "H5Loading",
+            align: "cc"
+          },
+          {
+            name: "errorDisplay",
+            align: "tlabs",
+            x: 0,
+            y: 0
+          },
+          {
+            name: "infoDisplay"
+          },
+          {
+            name: "tooltip",
+            align: "blabs",
+            x: 0,
+            y: 56
+          },
+          {
+            name: "thumbnail"
+          },
+          {
+            name: "controlBar",
+            align: "blabs",
+            x: 0,
+            y: 0,
+            children: [
+              {
+                name: "progress",
+                align: "blabs",
+                x: 0,
+                y: 44
+              },
+              {
+                name: "playButton",
+                align: "tl",
+                x: 15,
+                y: 12
+              },
+              {
+                name: "timeDisplay",
+                align: "tl",
+                x: 10,
+                y: 7
+              },
+              {
+                name: "fullScreenButton",
+                align: "tr",
+                x: 10,
+                y: 12
+              },
+              {
+                name: "volume",
+                align: "tr",
+                x: 5,
+                y: 10
+              }
+            ]
+          }
+        ]
       };
-      var opts = Object.assign({}, defaults, {
+      const opts = Object.assign({}, defaults, {
         source: vm.source,
         width: vm.width,
         height: vm.height,
-        preload: true,
-        autoplay: vm.autoplay
+        autoplay: vm.autoplay,
+        language: "zh-cn"
       });
-      // if (vm.skinLayout) {
-      //   opts.skinLayout = vm.skinLayout;
-      // }
       // 创建一个player实例
       console.log("Aliplayer opts: ", opts);
       new Aliplayer(opts, function(player) {

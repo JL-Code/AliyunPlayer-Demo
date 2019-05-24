@@ -1,5 +1,5 @@
 <template>
   <div class="about">
-    <h1>This is an about page</h1>
+    <iframe src="http://www.baidu.com"></iframe>
   </div>
 </template>

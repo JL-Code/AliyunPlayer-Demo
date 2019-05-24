@@ -1,5 +1,6 @@
 <template>
   <div class="home">
+    <!-- 音频播放 -->
     <video-player
       ref="player"
       source="https://s128.xiami.net/214/214/905/10915_2865875_l.mp3?ccode=xiami_web_web&expire=86400&duration=278&psid=db47a1e212e0bc4acbf36943d92364a5&ups_client_netip=14.111.60.252&ups_ts=1556728390&ups_userid=0&utid=c3bYFAbxIioCAQ5vPNBBsZQW&vid=10915&fn=10915_2865875_l.mp3&vkey=B1c56ed76c2b07fb2f18132bce2f7e3ae"
@@ -8,6 +9,7 @@
     <ul>
       <li v-for="(msg,index) in msgs" :key="index">msg:{{msg}}</li>
     </ul>
+    <!-- 视频播放 -->
     <div>
       <video-player ref="player2" source="//player.alicdn.com/video/aliyunmedia.mp4"></video-player>
     </div>

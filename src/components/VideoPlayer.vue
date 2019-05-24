@@ -90,7 +90,8 @@ export default {
     }
   },
   created() {
-    console.log("created");
+    // 添加对document 的 visibilitychange事件的监听
+    document.addEventListener("visibilitychange", this.onVisibilityChange);
   },
   methods: {
     initPlayer() {
@@ -296,12 +297,22 @@ export default {
     // ‘ended’
     getStatus() {
       return this.$player.getStatus();
+    },
+    onVisibilityChange(e) {
+      if (e.target.visibilityState === "visible") {
+        this.$refs.player.play();
+      } else if (e.target.visibilityState === "hidden") {
+        this.$refs.player.pause();
+      }
     }
   },
   beforeDestroy() {
     // 销毁player
     this.$player.dispose();
-    this.$player = null;
+  },
+  destroyed() {
+    // 移除对document 的 visibilitychange事件的监听
+    document.removeEventListener("visibilitychange", this.onVisibilityChange);
   }
 };
 </script>

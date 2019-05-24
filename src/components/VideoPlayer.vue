@@ -1,10 +1,10 @@
 <template>
-  <div :id="domid"></div>
+  <div :id="playerId"></div>
 </template>
 
 <script>
 export default {
-  name: "VideoPlayer",
+  name: "Player",
   props: {
     /**
      * @description 视频播放方式
@@ -20,8 +20,14 @@ export default {
      * ```
      * 3. 仅MPS用户使用
      */
+
     // 视频封面
     cover: String,
+    // 阿里云Web播放器SDK
+    aliplayerSdkPath: {
+      type: String,
+      default: "https://g.alicdn.com/de/prismplayer/2.8.1/aliplayer-h5-min.js"
+    },
     playmode: {
       type: String,
       default: "default"
@@ -49,7 +55,13 @@ export default {
   },
   data() {
     return {
-      domid: "J_AliyunPlayer_Element_",
+      playerId:
+        "aliplayer_" +
+        Math.random()
+          .toString(36)
+          .substr(2),
+      scriptTagStatus: 0,
+      isReload: false,
       initialized: false,
       playing: false,
       isAudio: undefined,
@@ -68,144 +80,183 @@ export default {
     // }
   },
   mounted() {
-    console.log("mounted");
+    if (window.Aliplayer !== undefined) {
+      // 如果全局对象存在，说明编辑器代码已经初始化完成，直接加载编辑器
+      this.scriptTagStatus = 2;
+      this.initPlayer();
+    } else {
+      // 如果全局对象不存在，说明编辑器代码还没有加载完成，需要加载编辑器代码
+      this.insertScriptTag();
+    }
   },
   created() {
     console.log("created");
-    this.initDom();
-    this.$nextTick(() => {
-      this.initPlayer();
-    });
   },
   methods: {
-    initDom() {
-      this.domid = `J_AliyunPlayer_Element_${Date.now()}`;
-    },
     initPlayer() {
       console.log("start initPlayer");
       const vm = this;
-      if (typeof Aliplayer === "undefined") {
-        console.warn("missing Aliplayer");
-        return;
+      // scriptTagStatus 为 2 的时候，说明两个必需引入的 js 文件都已经被引入，且加载完成
+      if (
+        vm.scriptTagStatus === 2 &&
+        (vm.$player === null || vm.reloadPlayer)
+      ) {
       }
-      let defaults = {
-        // player 容器ID
-        id: vm.domid,
-        // 播放器宽度
-        width: "100%",
-        // 播放器是否自动播放，在移动端autoplay属性会失效。
-        autoplay: false,
-        preload: false,
-        controlBarVisibility: "always",
-        skinLayout: [
-          {
-            name: "bigPlayButton",
-            align: "blabs",
-            x: 30,
-            y: 80
-          },
-          {
-            name: "H5Loading",
-            align: "cc"
-          },
-          {
-            name: "errorDisplay",
-            align: "tlabs",
-            x: 0,
-            y: 0
-          },
-          {
-            name: "infoDisplay"
-          },
-          {
-            name: "tooltip",
-            align: "blabs",
-            x: 0,
-            y: 56
-          },
-          {
-            name: "thumbnail"
-          },
-          {
-            name: "controlBar",
-            align: "blabs",
-            x: 0,
-            y: 0,
-            children: [
-              {
-                name: "progress",
-                align: "blabs",
-                x: 0,
-                y: 44
-              },
-              {
-                name: "playButton",
-                align: "tl",
-                x: 15,
-                y: 12
-              },
-              {
-                name: "timeDisplay",
-                align: "tl",
-                x: 10,
-                y: 7
-              },
-              {
-                name: "fullScreenButton",
-                align: "tr",
-                x: 10,
-                y: 12
-              },
-              {
-                name: "volume",
-                align: "tr",
-                x: 5,
-                y: 10
-              }
-            ]
-          }
-        ]
-      };
-      const opts = Object.assign({}, defaults, {
-        source: vm.source,
-        width: vm.width,
-        height: vm.height,
-        autoplay: vm.autoplay,
-        language: "zh-cn"
+      vm.$player && vm.$player.dispose();
+      // Vue 异步执行 DOM 更新，这样一来代码执行到这里的时候可能 template 里面的 script 标签还没真正创建
+      // 所以，我们只能在 nextTick 里面初始化 Aliplayer
+      vm.$nextTick(() => {
+        if (typeof Aliplayer === "undefined") {
+          console.warn("missing Aliplayer");
+          return;
+        }
+        let defaults = {
+          // player 容器ID
+          id: vm.playerId,
+          // 播放器宽度
+          width: "100%",
+          // 播放器是否自动播放，在移动端autoplay属性会失效。
+          autoplay: false,
+          preload: false,
+          controlBarVisibility: "always",
+          skinLayout: [
+            {
+              name: "bigPlayButton",
+              align: "blabs",
+              x: 30,
+              y: 80
+            },
+            {
+              name: "H5Loading",
+              align: "cc"
+            },
+            {
+              name: "errorDisplay",
+              align: "tlabs",
+              x: 0,
+              y: 0
+            },
+            {
+              name: "infoDisplay"
+            },
+            {
+              name: "tooltip",
+              align: "blabs",
+              x: 0,
+              y: 56
+            },
+            {
+              name: "thumbnail"
+            },
+            {
+              name: "controlBar",
+              align: "blabs",
+              x: 0,
+              y: 0,
+              children: [
+                {
+                  name: "progress",
+                  align: "blabs",
+                  x: 0,
+                  y: 44
+                },
+                {
+                  name: "playButton",
+                  align: "tl",
+                  x: 15,
+                  y: 12
+                },
+                {
+                  name: "timeDisplay",
+                  align: "tl",
+                  x: 10,
+                  y: 7
+                },
+                {
+                  name: "fullScreenButton",
+                  align: "tr",
+                  x: 10,
+                  y: 12
+                },
+                {
+                  name: "volume",
+                  align: "tr",
+                  x: 5,
+                  y: 10
+                }
+              ]
+            }
+          ]
+        };
+        const opts = Object.assign({}, defaults, {
+          source: vm.source,
+          width: vm.width,
+          height: vm.height,
+          autoplay: vm.autoplay,
+          language: "zh-cn"
+        });
+        // 创建一个player实例
+        console.log("Aliplayer opts: ", opts);
+        new Aliplayer(opts, function(player) {
+          vm.$player = player;
+          console.log("player", player);
+          console.log("player _isAudio", player._isAudio);
+          vm.isAudio = player._isAudio;
+          console.log("播放器初始完成");
+          vm.initialized = true;
+          vm.$emit("initialized");
+          // 监听player事件
+          vm.$player.on("ready", function(e) {
+            vm.$emit("ready", e);
+          });
+          vm.$player.on("play", function(e) {
+            vm.$emit("play", e);
+            vm.playing = true;
+          });
+          vm.$player.on("pause", function(e) {
+            vm.$emit("pause", e);
+            vm.playing = false;
+          });
+          vm.$player.on("ended", function(e) {
+            vm.$emit("ended", e);
+            vm.playing = false;
+          });
+          vm.$player.on("playing", function(e) {
+            vm.$emit("playing", e);
+          });
+          vm.$player.on("error", function(e) {
+            vm.$emit("error", e);
+          });
+        });
       });
-      // 创建一个player实例
-      console.log("Aliplayer opts: ", opts);
-      new Aliplayer(opts, function(player) {
-        vm.$player = player;
-        console.log("player", player);
-        console.log("player _isAudio", player._isAudio);
-        vm.isAudio = player._isAudio;
-        console.log("播放器初始完成");
-        vm.initialized = true;
-        vm.$emit("initialized");
-        // 监听player事件
-        vm.$player.on("ready", function(e) {
-          vm.$emit("ready", e);
+    },
+    insertScriptTag() {
+      const _this = this;
+      let playerScriptTag = document.getElementById("playerScriptTag");
+      // 如果这个tag不存在，则生成相关代码tag以加载代码
+      if (playerScriptTag === null) {
+        playerScriptTag = document.createElement("script");
+        playerScriptTag.type = "text/javascript";
+        playerScriptTag.src = this.aliplayerSdkPath;
+        playerScriptTag.id = "playerScriptTag";
+        let s = document.getElementsByTagName("head")[0];
+        s.appendChild(playerScriptTag);
+      }
+      if (playerScriptTag.loaded) {
+        _this.scriptTagStatus++;
+      } else {
+        playerScriptTag.addEventListener("load", () => {
+          _this.scriptTagStatus++;
+          playerScriptTag.loaded = true;
+          _this.initPlayer();
         });
-        vm.$player.on("play", function(e) {
-          vm.$emit("play", e);
-          vm.playing = true;
-        });
-        vm.$player.on("pause", function(e) {
-          vm.$emit("pause", e);
-          vm.playing = false;
-        });
-        vm.$player.on("ended", function(e) {
-          vm.$emit("ended", e);
-          vm.playing = false;
-        });
-        vm.$player.on("playing", function(e) {
-          vm.$emit("playing", e);
-        });
-        vm.$player.on("error", function(e) {
-          vm.$emit("error", e);
-        });
-      });
+      }
+      _this.initPlayer();
+    },
+    reloadPlayer: function() {
+      this.isReload = true;
+      this.initPlayer();
+      this.isReload = false;
     },
     /**
      * @description 播放视频
@@ -254,4 +305,8 @@ export default {
   }
 };
 </script>
+
+<style>
+@import url(//g.alicdn.com/de/prismplayer/2.8.1/skins/default/aliplayer-min.css);
+</style>
 
